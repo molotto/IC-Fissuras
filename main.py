@@ -1,7 +1,7 @@
 import argparse
 import numpy as np
 import os
-from tensorflow.keras.applications import VGG16, VGG19, MobileNet, MobileNetV2, ResNet152V2, DenseNet201, EfficientNetV2S, ConvNeXtSmall
+from tensorflow.keras.applications import VGG16, VGG19, MobileNet, MobileNetV2, ResNet152V2, DenseNet201
 from dataset_utils import carrega_dataset
 from model_utils import build_modelo
 from train_utils import treino, setup_custom_early_stopping, pesos_classes
@@ -179,16 +179,9 @@ def main():
                 
                 print("\nAnálise estatística concluída com sucesso!")
                 print(f"   Resultados salvos em: analise_estatistica/")
-                print(f"   CSV com resultados ANOVA: analise_estatistica/resultados_anova.csv")
-                
-                # Listar métricas com diferenças significativas
-                metricas_significativas = [m for m, r in resultados_anova.items() if r['p-valor'] < 0.05]
-                if metricas_significativas:
-                    print("\nMétricas com diferenças significativas entre modelos:")
-                    for m in metricas_significativas:
-                        print(f"   - {m}")
-                else:
-                    print("\nNão foram encontradas diferenças significativas entre modelos para nenhuma métrica.")
+                print(f"   - Boxplots das métricas")
+                print(f"   - CSV com resultados ANOVA")
+                print(f"   - CSV com resultados Tukey (quando aplicável)")
                 
             except Exception as e:
                 print(f"Erro ao realizar análise estatística: {e}")

@@ -172,18 +172,14 @@ def executa_cross_validation(model_name, train_dir, k=5, batch_size=8, epochs=10
         metricas_f1.append(f1)
         metricas_mcc.append(mcc)
 
-    print("\n Resultados finais por fold:")
-    for i in range(k):
-        print(f"Fold {i+1}: Acc={metricas_acuracia[i]:.4f}, Prec={metricas_precisao[i]:.4f}, Rec={metricas_recall[i]:.4f}, F1={metricas_f1[i]:.4f}")
-    
-    print(f"\n Médias: Acc={np.mean(metricas_acuracia):.4f}±{np.std(metricas_acuracia):.4f}, "
-          f"Prec={np.mean(metricas_precisao):.4f}±{np.std(metricas_precisao):.4f}, "
-          f"Rec={np.mean(metricas_recall):.4f}±{np.std(metricas_recall):.4f}, "
-          f"F1={np.mean(metricas_f1):.4f}±{np.std(metricas_f1):.4f}, "
-          f"MCC={np.mean(metricas_mcc):.4f}±{np.std(metricas_mcc):.4f}")
-    print(f" Tempo médio de inferência: {np.mean(tempos_inferencia)*1000:.2f}±{np.std(tempos_inferencia)*1000:.2f} ms por batch")
+    print(f"\nMédias finais:")
+    print(f"   Acc: {np.mean(metricas_acuracia):.4f}±{np.std(metricas_acuracia):.4f}")
+    print(f"   Prec: {np.mean(metricas_precisao):.4f}±{np.std(metricas_precisao):.4f}")
+    print(f"   Rec: {np.mean(metricas_recall):.4f}±{np.std(metricas_recall):.4f}")
+    print(f"   F1: {np.mean(metricas_f1):.4f}±{np.std(metricas_f1):.4f}")
+    print(f"   MCC: {np.mean(metricas_mcc):.4f}±{np.std(metricas_mcc):.4f}")
+    print(f"   Tempo: {np.mean(tempos_inferencia)*1000:.2f}±{np.std(tempos_inferencia)*1000:.2f}ms/batch")
 
-    # Salvar todas as métricas em CSV
     df_metricas = pd.DataFrame({
         'fold': list(range(1, k + 1)),
         'modelo': [model_name.upper()] * k,

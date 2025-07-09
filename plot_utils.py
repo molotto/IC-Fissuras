@@ -5,7 +5,7 @@ import os
 
 def plot_img_erradas(imagens_erradas, base_dir, model):
     num_imagens = len(imagens_erradas)
-    test_dir = base_dir + '/test'
+    test_dir = base_dir + '\\test'
     imagens_por_pagina = 5
     indice_atual = 0
     
@@ -59,3 +59,4 @@ def plot_img_erradas(imagens_erradas, base_dir, model):
 
     atualizar_imagens()
     plt.savefig(os.path.join(plot_file, 'erradas.png'))
+    plt.show()

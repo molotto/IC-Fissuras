@@ -161,36 +161,28 @@ def analisar_todas_metricas(df_metricas=None, pasta_metricas='metricas_cross_val
     
     # Realizar testes para cada métrica
     for metrica in metricas:
-        if metrica not in df_metricas.columns:
-            warnings.warn(f"Métrica '{metrica}' não encontrada no DataFrame. Pulando...")
-            continue
-            
-        print(f"\n{'='*50}")
-        print(f"ANÁLISE DA MÉTRICA: {metrica.upper()}")
-        print(f"{'='*50}")
-        
-        # Estatísticas descritivas
-        print("\nEstatísticas Descritivas:")
-        desc_stats = df_metricas.groupby('modelo')[metrica].describe()
-        print(desc_stats)
-        
-        # ANOVA
-        f_stat, p_valor = realizar_anova(df_metricas, metrica)
-        resultados_anova[metrica] = {'F': f_stat, 'p-valor': p_valor}
-        
-        # Tukey (se ANOVA for significativo)
-        if p_valor < 0.05:
-            result_tukey, df_result = realizar_tukey(df_metricas, metrica)
-            resultados_tukey[metrica] = df_result
-            
-            # Salvar resultado do Tukey em CSV
-            df_result.to_csv(os.path.join(pasta_saida, f'tukey_{metrica}.csv'), index=False)
-        
-        # Boxplot
-        plotar_boxplot_modelos(df_metricas, metrica)
+        criar_boxplot(df_metricas, metrica, pasta_saida)
     
-    # Salvar resultados ANOVA
-    pd.DataFrame(resultados_anova).T.to_csv(os.path.join(pasta_saida, 'resultados_anova.csv'))
+    # Realizar ANOVA e Tukey
+    for metrica in metricas:
+        # ANOVA
+        grupos = [group[metrica].values for name, group in df_metricas.groupby('modelo')]
+        f_stat, p_valor = stats.f_oneway(*grupos)
+        resultados_anova[metrica] = {'f_stat': f_stat, 'p-valor': p_valor}
+        
+        # Tukey (apenas se ANOVA for significativo)
+        if p_valor < 0.05:
+            tukey = pairwise_tukeyhsd(df_metricas[metrica], df_metricas['modelo'])
+            resultados_tukey[metrica] = tukey
+    
+    # Salvar resultados em CSV
+    df_anova = pd.DataFrame(resultados_anova).T
+    df_anova.to_csv(os.path.join(pasta_saida, 'resultados_anova.csv'))
+    
+    for metrica, tukey in resultados_tukey.items():
+        pd.DataFrame(data=tukey._results_table.data[1:], 
+                    columns=tukey._results_table.data[0]).to_csv(
+                    os.path.join(pasta_saida, f'tukey_{metrica}.csv'), index=False)
     
     print(f"\nAnálise concluída. Resultados salvos em '{pasta_saida}'")
     return resultados_anova, resultados_tukey
@@ -236,7 +228,7 @@ def gerar_relatorio_latex(resultados_anova, resultados_tukey, pasta_saida='anali
         
         for metrica, resultado in resultados_anova.items():
             significativo = "Sim" if resultado['p-valor'] < 0.05 else "Não"
-            f.write(f"{metrica} & {resultado['F']:.4f} & {resultado['p-valor']:.4f} & {significativo} \\\\\n")
+            f.write(f"{metrica} & {resultado['f_stat']:.4f} & {resultado['p-valor']:.4f} & {significativo} \\\\\n")
         
         f.write(r'\bottomrule' + '\n')
         f.write(r'\end{tabular}' + '\n')
@@ -248,11 +240,13 @@ def gerar_relatorio_latex(resultados_anova, resultados_tukey, pasta_saida='anali
         f.write(r'diferenças significativas no teste ANOVA (p < 0.05), permitindo ' + '\n')
         f.write(r'identificar quais pares de modelos diferem entre si.' + '\n')
         
-        for metrica, df_result in resultados_tukey.items():
+        for metrica, tukey in resultados_tukey.items():
             f.write(f"\n\\subsection{{Teste Tukey para {metrica}}}\n")
             
             # Filtrar apenas resultados significativos
-            df_sig = df_result[df_result['Significativo'] == 'Sim']
+            df_sig = pd.DataFrame(data=tukey._results_table.data[1:], 
+                                  columns=tukey._results_table.data[0])
+            df_sig = df_sig[df_sig['Significativo'] == 'Sim']
             
             if len(df_sig) > 0:
                 f.write(r'\begin{table}[H]' + '\n')
